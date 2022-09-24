@@ -52,23 +52,23 @@ class LoginCheckpointController extends AbstractLoginController
     public function __invoke(LoginCheckpointRequest $request): JsonResponse
     {
         if ($this->hasTooManyLoginAttempts($request)) {
-            $this->sendLockoutResponse($request);
+            return $this->sendLockoutResponse($request);
         }
 
         $details = $request->session()->get('auth_confirmation_token');
         if (!$this->hasValidSessionData($details)) {
-            $this->sendFailedLoginResponse($request, null, self::TOKEN_EXPIRED_MESSAGE);
+            return $this->sendFailedLoginResponse($request, null, self::TOKEN_EXPIRED_MESSAGE);
         }
 
         if (!hash_equals($request->input('confirmation_token') ?? '', $details['token_value'])) {
-            $this->sendFailedLoginResponse($request);
+            return $this->sendFailedLoginResponse($request);
         }
 
         try {
             /** @var \Pterodactyl\Models\User $user */
             $user = User::query()->findOrFail($details['user_id']);
         } catch (ModelNotFoundException $exception) {
-            $this->sendFailedLoginResponse($request, null, self::TOKEN_EXPIRED_MESSAGE);
+            return $this->sendFailedLoginResponse($request, null, self::TOKEN_EXPIRED_MESSAGE);
         }
 
         // Recovery tokens go through a slightly different pathway for usage.
